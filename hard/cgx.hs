@@ -61,19 +61,25 @@ primitiveP =
 
 stringP :: Parser String
 stringP =
-    char '\'' *> (many (noneOf ['\''])) <* char '\''
+    char '\'' *> (many $ noneOf ['\'']) <* char '\''
 
 numberP :: Parser String
 numberP = many1 digit
 
 booleanP :: Parser Bool
-booleanP = booleanTrue <|> booleanFalse
+booleanP = lexeme $ booleanTrue <|> booleanFalse
 
 booleanTrue :: Parser Bool
 booleanTrue = string "true" *> pure True
 
 booleanFalse :: Parser Bool
 booleanFalse = string "false" *> pure False
+
+lexeme p = ws *> p <* ws
+
+ws :: Parser String
+ws = many $ oneOf " \t\n"
+
 
 -- Main
 main :: IO ()
