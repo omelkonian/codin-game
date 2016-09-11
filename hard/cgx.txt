@@ -1,9 +1,0 @@
-( 'user'= (
-    'key'='1= t(c)(';
-    'valid'=false
-  );
-  'user'= (
-    'key'=' = ; ';
-    'valid'= true
-  ); ()
-​)

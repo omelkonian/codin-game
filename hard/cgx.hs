@@ -7,6 +7,25 @@ import Data.Char
 import Text.Parsec
 import Text.Parsec.Char
 import Text.Parsec.String
+import Data.IORef
+
+main :: IO ()
+main = do
+    input_line <- getLine
+    let n = read input_line :: Int
+
+    inputString <- newIORef ""
+    replicateM n $ do
+        cgxline <- getLine
+        in0 <- readIORef inputString
+        writeIORef inputString $ in0 ++ cgxline
+        return ()
+    in0 <- readIORef inputString
+    case (parse elementP "" in0) of
+        Right element -> do
+            pp 0 element
+    return ()
+
 
 
 -- Data types
@@ -31,7 +50,7 @@ data Element = EK KeyValue
 elementP :: Parser Element
 elementP = lexeme $
     try (EK <$> keyValueP)
-    <|> (try (EB <$> blockP))
+    <|> (EB <$> blockP)
     <|> (EP <$> primitiveP)
 
 ------------------- Block ------------------------
@@ -53,7 +72,7 @@ keyValueP = lexeme $
 keyValuePrimP :: Parser KeyValue
 keyValuePrimP = do
     s <- stringP
-    char '='
+    lexeme $ char '='
     p <- primitiveP
     return $ KVP s p
 
@@ -76,7 +95,7 @@ stringP =
     char '\'' *> (many $ noneOf ['\'']) <* char '\''
 
 numberP :: Parser String
-numberP = lexeme (many1 digit)
+numberP = lexeme $ many1 digit
 
 booleanP :: Parser Bool
 booleanP = booleanTrue <|> booleanFalse
@@ -88,26 +107,15 @@ booleanFalse :: Parser Bool
 booleanFalse = string "false" *> pure False
 
 ------------------ Whitespace --------------------
-lexeme p = ws *> p <* ws
-
-ws :: Parser String
-ws = many $ oneOf " \t\n"
-
--- Main
-main :: IO ()
-main = do
-  x <- parseFromFile elementP "cgx.txt"
-  print x
-  case x of
-    Right element -> do
-      pp 0 element
-      return ()
+lexeme p = spaces *> p <* spaces
 
 --------------- Pretty Printing ------------------
 pp indent (EP p) = pp_p indent p
 pp indent (EK kv) = pp_kv indent kv
 pp indent (EB b) = pp_b indent b
 
+pp_els i [] =
+  return ()
 pp_els i [l] =
   ln >> pp i l
 pp_els i (l:ls) =
@@ -127,23 +135,15 @@ pp_kv indent (KVB s b) = do
   ln
   pp_b indent b
 
-pp_p indent (S s) = put indent s
+pp_p indent (S s) = put indent $ "'" ++ s ++ "'"
 pp_p indent (B b) = put indent $ if b then "true" else "false"
-pp_p indent (N n) = put indent $ show n
+pp_p indent (N n) = put indent n
 
 
 ln = putStrLn ""
 
 put indent s = do
   replicateM indent $ do
-    putStr "\t"
+    putStr "    "
     return ()
   putStr s
-
--------------------- Main ------------------------
-main2 :: IO ()
-main2 = forever $ do
-    hSetBuffering stdin LineBuffering
-    cgxline <- getLine
-    parseTest elementP cgxline
-    return ()
