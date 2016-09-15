@@ -1,29 +1,47 @@
-import Data.Set (fromList, Set)
+import Data.Set (Set, fromList, member)
+import Data.Array (listArray, (!))
+import Data.Ix (range)
+import Control.Monad (replicateM)
+
+type MorseCode = String
+type Dictionary = Set String
 
 main :: IO ()
 main = do
-    let morse = formatMorse ".-..-.---.-..-.-.."
-    print morse
-    let dict = ["ABC", "DEF", "GHCI"]
+    input_line <- getLine
+    let morse = input_line :: String
+    input_line <- getLine
+    let n = read input_line :: Int
 
-    print $ wordsToDict dict
+    ws <- replicateM n getLine
+    let res = getNumber morse $ wordsToDict ws
+    print res
 
-getNumber :: String -> Int
-getNumber []
-getNumber ((c, accu) : rest) = getNumber0
---
--- getNumber0 :: String -> Int -> Int
--- getNumber0 [] accu = accu
--- getNumber0 (c:cs) accu =
+getNumber :: MorseCode -> Dictionary -> Int
+getNumber morse dict = go len
+  where len = length morse
 
-formatMorse :: String -> [(Char, Int)]
-formatMorse [] = [(' ', 1)]
-formatMorse (c:cs) = (c, 1) : formatMorse cs
+        go (-1) = 0
+        go 0 = 1
+        go n = sum [calc n k | k <- [n,n-1..0]]
 
-wordsToDict :: [String] -> Set String
-wordsToDict ws = fromList $ map wordToMorse ws
+        calc index subsize =
+          if member (substring subsize index morse) dict then
+            arr ! (subsize - 1)
+          else
+            0
 
-wordToMorse :: String -> String
+        bounds = (-1, len)
+        arr = listArray bounds [go x | x <- range bounds]
+        -- subs = listArray bounds []
+
+substring :: Int -> Int -> String -> String
+substring start end str = take (end - start + 1) $ drop (start - 1) str
+
+wordsToDict :: [String] -> Dictionary
+wordsToDict = fromList . map wordToMorse
+
+wordToMorse :: String -> MorseCode
 wordToMorse = foldr ((++) . charToMorse) ""
 
 charToMorse :: Char -> String
@@ -54,4 +72,3 @@ charToMorse c = case c of
     'X' -> "-..-"
     'Y' -> "-.--"
     'Z' -> "--.."
-    _ -> ""
